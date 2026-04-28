@@ -3,20 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: EMMYFAD Global Enterprise — Marine engineering, maritime safety & procurement portfolio + admin dashboard.
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: portfolio
+    description: Portfolio metadata (services, skills, business profile)
+  - name: serviceRequests
+    description: Customer service / contract requests
+  - name: messages
+    description: Message queue between admin and customers
+  - name: contacts
+    description: Contact directory of customers
+  - name: payments
+    description: Stripe payment requests issued from the dashboard
+  - name: dashboard
+    description: Admin dashboard summary endpoints
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +35,628 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /portfolio/profile:
+    get:
+      operationId: getBusinessProfile
+      tags: [portfolio]
+      summary: Get business profile (public)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessProfile"
+
+  /portfolio/skills:
+    get:
+      operationId: listSkills
+      tags: [portfolio]
+      summary: List all skills shown in the top banner (public)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Skill"
+
+  /portfolio/services:
+    get:
+      operationId: listServices
+      tags: [portfolio]
+      summary: List all service categories / development levels (public)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+
+  /portfolio/services/{slug}:
+    get:
+      operationId: getService
+      tags: [portfolio]
+      summary: Get a single service by slug (public)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /portfolio/landmarks:
+    get:
+      operationId: listLandmarks
+      tags: [portfolio]
+      summary: Nearby 2-star+ restaurant landmarks for office navigation (public)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Landmark"
+
+  /service-requests:
+    post:
+      operationId: createServiceRequest
+      tags: [serviceRequests]
+      summary: Submit a new service / contract request (public)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listServiceRequests
+      tags: [serviceRequests]
+      summary: List all service requests (admin only)
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [new, reviewing, contracted, completed, cancelled]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /service-requests/{id}:
+    get:
+      operationId: getServiceRequest
+      tags: [serviceRequests]
+      summary: Get a single service request (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequestDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateServiceRequest
+      tags: [serviceRequests]
+      summary: Update a service request status / notes (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceRequestInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRequest"
+
+  /contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List all unique customer contacts (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contact"
+
+  /messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: List recent messages, optionally for one request (admin only)
+      parameters:
+        - in: query
+          name: serviceRequestId
+          required: false
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: createMessage
+      tags: [messages]
+      summary: Send a new outbound message to a contact (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List all payment requests (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentRequest"
+    post:
+      operationId: createPaymentRequest
+      tags: [payments]
+      summary: Create a new Stripe payment request for a customer (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRequest"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Aggregated counts and totals for the admin dashboard (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/audit-log:
+    get:
+      operationId: listAuditLog
+      tags: [dashboard]
+      summary: Recent audit log entries for bookkeeping (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEntry"
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
+        status: { type: string }
+      required: [status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+
+    BusinessProfile:
+      type: object
+      properties:
+        businessName: { type: string }
+        ownerName: { type: string }
+        email: { type: string }
+        address: { type: string }
+        nin: { type: string }
+        sex: { type: string }
+        dateOfBirth: { type: string }
+        bio: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+      required:
+        [
+          businessName,
+          ownerName,
+          email,
+          address,
+          nin,
+          sex,
+          dateOfBirth,
+          bio,
+          latitude,
+          longitude,
+        ]
+
+    Skill:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: string }
+        valueProposition: { type: string }
+        logoUrl: { type: string }
+        accentColor: { type: string }
+      required:
+        [id, name, category, valueProposition, logoUrl, accentColor]
+
+    Service:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        title: { type: string }
+        tagline: { type: string }
+        description: { type: string }
+        deliverables:
+          type: array
+          items: { type: string }
+        portfolioHighlights:
+          type: array
+          items: { type: string }
+        contractTerms: { type: string }
+        iconKey: { type: string }
+      required:
+        [
+          id,
+          slug,
+          title,
+          tagline,
+          description,
+          deliverables,
+          portfolioHighlights,
+          contractTerms,
+          iconKey,
+        ]
+
+    Landmark:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: string }
+        starRating: { type: integer }
+        latitude: { type: number }
+        longitude: { type: number }
+        directionsHint: { type: string }
+      required:
+        [
+          id,
+          name,
+          category,
+          starRating,
+          latitude,
+          longitude,
+          directionsHint,
+        ]
+
+    CreateServiceRequestInput:
+      type: object
+      properties:
+        serviceSlug: { type: string }
+        purchaserName: { type: string }
+        purchaserEmail: { type: string }
+        purchaserPhone: { type: string }
+        purchaserCompany:
+          type: ["string", "null"]
+        projectAddress: { type: string }
+        projectDescription: { type: string }
+        estimatedBudget:
+          type: ["integer", "null"]
+        startDate:
+          type: ["string", "null"]
+        contractTermsAccepted: { type: boolean }
+      required:
+        [
+          serviceSlug,
+          purchaserName,
+          purchaserEmail,
+          purchaserPhone,
+          projectAddress,
+          projectDescription,
+          contractTermsAccepted,
+        ]
+
+    UpdateServiceRequestInput:
+      type: object
+      properties:
         status:
           type: string
-      required:
-        - status
+          enum: [new, reviewing, contracted, completed, cancelled]
+        adminNotes:
+          type: ["string", "null"]
 
+    ServiceRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        serviceSlug: { type: string }
+        serviceTitle: { type: string }
+        purchaserName: { type: string }
+        purchaserEmail: { type: string }
+        purchaserPhone: { type: string }
+        purchaserCompany:
+          type: ["string", "null"]
+        projectAddress: { type: string }
+        projectDescription: { type: string }
+        estimatedBudget:
+          type: ["integer", "null"]
+        startDate:
+          type: ["string", "null"]
+        contractTermsAccepted: { type: boolean }
+        status: { type: string }
+        adminNotes:
+          type: ["string", "null"]
+        createdAt: { type: string }
+      required:
+        [
+          id,
+          serviceSlug,
+          serviceTitle,
+          purchaserName,
+          purchaserEmail,
+          purchaserPhone,
+          projectAddress,
+          projectDescription,
+          contractTermsAccepted,
+          status,
+          createdAt,
+        ]
+
+    ServiceRequestDetail:
+      type: object
+      properties:
+        request:
+          $ref: "#/components/schemas/ServiceRequest"
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentRequest"
+      required: [request, messages, payments]
+
+    Contact:
+      type: object
+      properties:
+        email: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        company:
+          type: ["string", "null"]
+        requestCount: { type: integer }
+        lastContactAt: { type: string }
+      required: [email, name, phone, requestCount, lastContactAt]
+
+    Message:
+      type: object
+      properties:
+        id: { type: integer }
+        serviceRequestId: { type: integer }
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        subject: { type: string }
+        body: { type: string }
+        recipientEmail: { type: string }
+        createdAt: { type: string }
+      required:
+        [
+          id,
+          serviceRequestId,
+          direction,
+          subject,
+          body,
+          recipientEmail,
+          createdAt,
+        ]
+
+    CreateMessageInput:
+      type: object
+      properties:
+        serviceRequestId: { type: integer }
+        subject: { type: string }
+        body: { type: string }
+      required: [serviceRequestId, subject, body]
+
+    PaymentRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        serviceRequestId: { type: integer }
+        purchaserName: { type: string }
+        purchaserEmail: { type: string }
+        amountCents: { type: integer }
+        currency: { type: string }
+        description: { type: string }
+        status:
+          type: string
+          enum: [draft, sent, paid, refunded, cancelled, error]
+        stripeCheckoutUrl:
+          type: ["string", "null"]
+        stripeSessionId:
+          type: ["string", "null"]
+        errorMessage:
+          type: ["string", "null"]
+        createdAt: { type: string }
+        paidAt:
+          type: ["string", "null"]
+      required:
+        [
+          id,
+          serviceRequestId,
+          purchaserName,
+          purchaserEmail,
+          amountCents,
+          currency,
+          description,
+          status,
+          createdAt,
+        ]
+
+    CreatePaymentRequestInput:
+      type: object
+      properties:
+        serviceRequestId: { type: integer }
+        amountCents: { type: integer }
+        currency: { type: string }
+        description: { type: string }
+      required:
+        [serviceRequestId, amountCents, currency, description]
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalRequests: { type: integer }
+        newRequests: { type: integer }
+        activeContracts: { type: integer }
+        completedContracts: { type: integer }
+        totalContacts: { type: integer }
+        totalMessages: { type: integer }
+        unreadOutbound: { type: integer }
+        revenueCents: { type: integer }
+        pendingPaymentCents: { type: integer }
+        revenueByService:
+          type: array
+          items:
+            type: object
+            properties:
+              serviceSlug: { type: string }
+              serviceTitle: { type: string }
+              amountCents: { type: integer }
+              count: { type: integer }
+            required: [serviceSlug, serviceTitle, amountCents, count]
+        recentRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRequest"
+      required:
+        [
+          totalRequests,
+          newRequests,
+          activeContracts,
+          completedContracts,
+          totalContacts,
+          totalMessages,
+          unreadOutbound,
+          revenueCents,
+          pendingPaymentCents,
+          revenueByService,
+          recentRequests,
+        ]
+
+    AuditEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        action: { type: string }
+        entityType: { type: string }
+        entityId:
+          type: ["integer", "null"]
+        actor: { type: string }
+        details: { type: string }
+        createdAt: { type: string }
+      required: [id, action, entityType, actor, details, createdAt]

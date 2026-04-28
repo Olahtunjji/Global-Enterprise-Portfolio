@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "EMMYFAD Global Enterprise"
+version = "1.0.0"
+id = "artifacts/emmyfad"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24984
+
+[services.development]
+run = "pnpm --filter @workspace/emmyfad run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/emmyfad", "run", "build" ]
+publicDir = "artifacts/emmyfad/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24984"
+BASE_PATH = "/"
