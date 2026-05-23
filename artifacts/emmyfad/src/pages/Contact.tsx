@@ -148,7 +148,7 @@ export default function Contact() {
               <Phone className="w-5 h-5 text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="font-semibold text-foreground">Phone</p>
-                <p className="text-foreground/80">+234 802 555 0118</p>
+                <p className="text-foreground/80">+2348139625100</p>
                 <p className="text-xs text-muted-foreground">
                   WhatsApp available — same number.
                 </p>
