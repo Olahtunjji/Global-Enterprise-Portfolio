@@ -21,6 +21,7 @@ import Home from "@/pages/Home";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import ServiceDetail from "@/pages/ServiceDetail";
+import NurtureValues from "@/pages/NurtureValues";
 import SignInPage from "@/pages/auth/SignInPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -102,6 +103,7 @@ function ClerkProviderWithRoutes() {
               <Switch>
                 <Route path="/" component={Home} />
                 <Route path="/about" component={About} />
+                <Route path="/nurture-values" component={NurtureValues} />
                 <Route path="/contact" component={Contact} />
                 <Route path="/services/:slug" component={ServiceDetail} />
                 <Route component={NotFound} />

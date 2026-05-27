@@ -7,6 +7,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/about", label: "About" },
+    { href: "/nurture-values", label: "Nurture & Values" },
     { href: "/contact", label: "Contact" },
   ];
 
